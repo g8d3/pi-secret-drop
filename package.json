@@ -1,0 +1,12 @@
+{
+  "name": "@g8d3/pi-secret-drop",
+  "version": "1.0.0",
+  "description": "Receive secrets via UI dialog straight to a 0600 file. Values never touch the transcript.",
+  "keywords": ["pi-package"],
+  "license": "MIT",
+  "type": "module",
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}
