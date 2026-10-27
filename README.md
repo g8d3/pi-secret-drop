@@ -21,8 +21,6 @@ Then, from any session:
 Rules: scoped API tokens only, never account passwords. Anything pasted in chat
 lands in session logs; this path never puts the value in a message, tool result,
 entry, notification, or log. Override the path with `PI_SECRETS_FILE`.
-Upgrading from the old `~/.config/echolike/store-secrets.env` default? Existing
-secrets are imported automatically on first run and the legacy file is removed.
 
 Limit: Pi's `input` dialog has no password-mask flag, so shield the screen while
 pasting. The value is single-shot: dialog → file, never rendered back.

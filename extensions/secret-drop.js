@@ -8,8 +8,6 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { Type } from "typebox";
 
-const LEGACY_SECRETS_FILE = path.join(os.homedir(), ".config", "echolike", "store-secrets.env");
-
 function resolveSecretsFile() {
   if (process.env.PI_SECRETS_FILE) return process.env.PI_SECRETS_FILE;
   const base = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
@@ -17,44 +15,20 @@ function resolveSecretsFile() {
 }
 
 const SECRETS_FILE = resolveSecretsFile();
-let migrationNote = "";
-function takeMigrationNote() {
-  const n = migrationNote;
-  migrationNote = "";
-  return n;
-}
-function withNote(text) {
-  const n = takeMigrationNote();
-  return n ? n + text : text;
-}
 const NAME_RE = /^[A-Z][A-Z0-9_]{1,63}$/;
 const DIALOG_TIMEOUT_MS = 120000;
-
-function parseEnv(raw, map) {
-  for (const line of raw.split("\n")) {
-    const t = line.trim();
-    if (!t || t.startsWith("#")) continue;
-    const i = t.indexOf("=");
-    if (i > 0 && !map.has(t.slice(0, i).trim())) map.set(t.slice(0, i).trim(), t.slice(i + 1));
-  }
-}
 
 function load() {
   const map = new Map();
   try {
-    parseEnv(fs.readFileSync(SECRETS_FILE, "utf8"), map);
+    const raw = fs.readFileSync(SECRETS_FILE, "utf8");
+    for (const line of raw.split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      const i = t.indexOf("=");
+      if (i > 0) map.set(t.slice(0, i).trim(), t.slice(i + 1));
+    }
   } catch {}
-  if (SECRETS_FILE !== LEGACY_SECRETS_FILE && SECRETS_FILE !== process.env.PI_SECRETS_FILE) {
-    try {
-      const before = map.size;
-      parseEnv(fs.readFileSync(LEGACY_SECRETS_FILE, "utf8"), map);
-      if (map.size > before) {
-        save(map);
-        fs.unlinkSync(LEGACY_SECRETS_FILE);
-        migrationNote = `Migrated ${map.size - before} secret(s) from the legacy path; legacy file removed. `;
-      }
-    } catch {}
-  }
   return map;
 }
 
@@ -121,13 +95,13 @@ async function doDrop(name, ui) {
   try {
     ui.notify(`Stored ${name} (${value.length} chars) in ${SECRETS_FILE}.`, "info");
   } catch {}
-  return { ok: true, text: withNote(`Stored ${name} (${value.length} chars). Value not shown anywhere.`) };
+  return { ok: true, text: `Stored ${name} (${value.length} chars). Value not shown anywhere.` };
 }
 
 function doList() {
   const map = load();
   const names = [...map.keys()];
-  return withNote(names.length ? `Secrets on file: ${names.join(", ")}` : "No secrets stored.");
+  return names.length ? `Secrets on file: ${names.join(", ")}` : "No secrets stored.";
 }
 
 function doForget(name) {
@@ -137,7 +111,7 @@ function doForget(name) {
   if (!map.has(name)) return { ok: false, text: `${name} not found.` };
   map.delete(name);
   save(map);
-  return { ok: true, text: withNote(`Forgot ${name}.`) };
+  return { ok: true, text: `Forgot ${name}.` };
 }
 
 export default function (pi) {
