@@ -127,7 +127,7 @@ export default function (pi) {
     executionMode: "sequential",
     async execute(_id, params, _signal, _onUpdate, ctx) {
       const r = await doDrop(params.name, ctx.ui);
-      return { content: r.text, details: undefined };
+      return { content: [{ type: "text", text: r.text }], details: undefined };
     },
   });
 
@@ -140,7 +140,7 @@ export default function (pi) {
     annotations: { readOnlyHint: true, openWorldHint: false },
     executionMode: "sequential",
     async execute() {
-      return { content: doList(), details: undefined };
+      return { content: [{ type: "text", text: doList() }], details: undefined };
     },
   });
 
@@ -154,7 +154,7 @@ export default function (pi) {
     executionMode: "sequential",
     async execute(_id, params) {
       const r = doForget(params.name);
-      return { content: r.text, details: undefined };
+      return { content: [{ type: "text", text: r.text }], details: undefined };
     },
   });
 
@@ -169,27 +169,27 @@ export default function (pi) {
     executionMode: "sequential",
     async execute(_id, params, _signal, _onUpdate, ctx) {
       const bad = checkName(params.name);
-      if (bad) return { content: bad, details: undefined };
+      if (bad) return { content: [{ type: "text", text: bad }], details: undefined };
       if (!Array.isArray(params.command) || !params.command.length)
-        return { content: "command must be a non-empty argv array.", details: undefined };
+        return { content: [{ type: "text", text: "command must be a non-empty argv array." }], details: undefined };
       const value = load().get(params.name);
       if (value === undefined) {
         const retry = await ctx.ui.confirm(
           "Missing secret",
           `${params.name} is not stored. Store it now?`,
         );
-        if (!retry) return { content: `${params.name} not stored.`, details: undefined };
+        if (!retry) return { content: [{ type: "text", text: `${params.name} not stored.` }], details: undefined };
         const r = await doDrop(params.name, ctx.ui);
-        if (!r.ok) return { content: r.text, details: undefined };
+        if (!r.ok) return { content: [{ type: "text", text: r.text }], details: undefined };
         return {
-          content: `${r.text} Re-run secret_exec to use it.`,
+          content: [{ type: "text", text: `${r.text} Re-run secret_exec to use it.` }],
           details: undefined,
         };
       }
       const cwd = params.cwd || ctx.cwd;
       const r = await runWithSecret(params.name, value, params.command, cwd);
       const out = (r.out + (r.err ? `\n[stderr]\n${r.err}` : "")).slice(-4000);
-      return { content: `exit ok=${r.ok}\n${out}`, details: undefined };
+      return { content: [{ type: "text", text: `exit ok=${r.ok}\n${out}` }], details: undefined };
     },
   });
 
